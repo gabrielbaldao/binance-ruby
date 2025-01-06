@@ -14,7 +14,7 @@ module Binance
         raise Error.new(message: "interval is required") unless interval
         raise Error.new(message: "symbol is required") unless symbol
         params = { endTime: endTime, interval: interval, limit: limit, startTime: startTime, symbol: symbol }
-        Request.send!(api_key_type: :read_info, path: "/api/v1/klines", params: params,
+        Request.send!(api_key_type: :read_info, path: "/api/v3/klines", params: params,
                       api_key: api_key, api_secret_key: api_secret_key)
       end
 
@@ -35,7 +35,7 @@ module Binance
       end
 
       def exchange_info!(api_key: nil, api_secret_key: nil)
-        Request.send!(api_key_type: :read_info, path: "/api/v1/exchangeInfo",
+        Request.send!(api_key_type: :read_info, path: "/api/v3/exchangeInfo",
                       api_key: api_key, api_secret_key: api_secret_key)
       end
 
@@ -51,6 +51,15 @@ module Binance
         params = { recvWindow: recvWindow, timestamp: timestamp }.delete_if { |key, value| value.nil? }
         Request.send!(api_key_type: :read_info, path: "/api/v3/account", params: params, security_type: :user_data,
                       api_key: api_key, api_secret_key: api_secret_key)
+      end
+
+      def my_trades!(symbol: nil, limit: 500, fromId: nil, api_key: nil, api_secret_key: nil)
+        raise Error.new(message: "symbol is required") unless symbol
+        timestamp = Configuration.timestamp
+
+        params = { fromId: fromId, limit: limit, symbol: symbol, timestamp: timestamp }.compact
+        Request.send!(api_key_type: :read_info, path: "/api/v3/myTrades", params: params,
+                      security_type: :user_data, api_key: api_key, api_secret_key: api_secret_key)
       end
 
       def ping!
@@ -77,7 +86,7 @@ module Binance
         Request.send!(api_key_type: :read_info, path: "/api/v1/trades", params: params,
                       api_key: api_key, api_secret_key: api_secret_key)
       end
-      
+
       def avg!(symbol: nil, api_key: nil, api_secret_key: nil)
         raise Error.new(message: "symbol is required") unless symbol
         params = { symbol: symbol }
