@@ -2,6 +2,10 @@ module Binance
   module Api
     class << self
       def all_coins_info!(recvWindow: nil, api_key: nil, api_secret_key: nil)
+        if Configuration.base_url.include?("testnet")
+          raise Error.new(message: "use mainnet for this method. testnet is meant for spot trading and order execution.")
+        end
+
         timestamp = Configuration.timestamp
         params = { recvWindow: recvWindow, timestamp: timestamp }
         Request.send!(api_key_type: :read_info, security_type: :user_data,
@@ -34,9 +38,10 @@ module Binance
                       api_key: api_key, api_secret_key: api_secret_key)
       end
 
-      def exchange_info!(api_key: nil, api_secret_key: nil)
+      def exchange_info!(api_key: nil, api_secret_key: nil, symbol: nil)
+        params = symbol ? { symbol: symbol } : {}
         Request.send!(api_key_type: :read_info, path: "/api/v3/exchangeInfo",
-                      api_key: api_key, api_secret_key: api_secret_key)
+                      api_key: api_key, api_secret_key: api_secret_key, params: params)
       end
 
       def historical_trades!(symbol: nil, limit: 500, fromId: nil, api_key: nil, api_secret_key: nil)
@@ -66,12 +71,18 @@ module Binance
         Request.send!(path: "/api/v1/ping")
       end
 
-      def ticker!(symbol: nil, type: nil, api_key: nil, api_secret_key: nil)
+      def ticker!(symbol: nil, symbols: nil, type: nil, api_key: nil, api_secret_key: nil)
         ticker_type = type&.to_sym
         error_message = "type must be one of: #{ticker_types.join(", ")}. #{type} was provided."
         raise Error.new(message: error_message) unless ticker_types.include? ticker_type
         path = ticker_path(type: ticker_type)
-        params = symbol ? { symbol: symbol } : {}
+        params = if symbol
+          { symbols: symbol }
+        elsif symbols
+          { symbols: symbols.to_s.delete(' ') }
+        else
+          {}
+        end
         Request.send!(api_key_type: :read_info, path: path, params: params,
                       api_key: api_key, api_secret_key: api_secret_key)
       end
